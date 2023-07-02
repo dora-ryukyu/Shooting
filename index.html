@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>四六五五シューティング</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+      .title {
+        font-size: 48px;
+        text-align: center;
+        margin-top: 100px;
+      }
+      .score {
+        font-size: 24px;
+        text-align: right;
+        margin-right: 20px;
+        margin-top: 20px;
+      }
+      .time {
+        font-size: 24px;
+        text-align: left;
+        margin-left: 20px;
+        margin-top: 20px;
+      }
+      .result {
+        font-size: 48px;
+        text-align: center;
+        margin-top: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="title" class="title">四六五五シューティング</div>
+    <div id="score" class="score"></div>
+    <div id="time" class="time"></div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="result" class="result"></div>
+    <script>
+      // ゲーム画面のサイズ
+      const canvasWidth = window.innerWidth;
+      const canvasHeight = window.innerHeight;
+
+      // キャンバスの取得
+      const canvas = document.getElementById("gameCanvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // 描画コンテキストの取得
+      const context = canvas.getContext("2d");
+
+      // プレイヤーの初期位置
+      let playerX = canvasWidth / 2;
+      let playerY = canvasHeight - 100;
+
+      // プレイヤーの画像読み込み
+      const playerImage = new Image();
+      playerImage.src = "kn4655.png";
+
+      // 敵の初期位置
+      let enemyX = Math.random() * canvasWidth;
+      let enemyY = 50;
+
+      // 敵の画像読み込み
+      const enemyImage = new Image();
+      enemyImage.src = "enemy.png";
+
+      // 敵の弾の初期位置
+      let enemyBulletX = 0;
+      let enemyBulletY = 0;
+
+      // 弾の初期位置
+      let bulletX = playerX + 20;
+      let bulletY = playerY - 20;
+
+      // スコアと制限時間の初期値
+      let score = 0;
+      let time = 30;
+
+      // ゲームスタートフラグ
+      let gameStart = false;
+
+      // ゲームオーバーフラグ
+      let gameOver = false;
+
+      // タイトル画面の描画
+      function drawTitle() {
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvasWidth, canvasHeight);
+        context.fillStyle = "white";
+        context.font = "48px sans-serif";
+        context.textAlign = "center";
+        context.fillText("四六五五シューティング", canvasWidth / 2, canvasHeight / 2);
+      }
+
+      // ゲームスタート時の初期化
+      function gameInit() {
+        playerX = canvasWidth / 2;
+        playerY = canvasHeight - 100;
+        enemyX = Math.random() * canvasWidth;
+        enemyY = 50;
+        bulletX = playerX + 20;
+        bulletY = playerY - 20;
+        score = 0;
+        time = 30;
+        gameStart = true;
+        gameOver = false;
+      }
+
+      // スコアと制限時間の描画
+      function drawScore() {
+        context.fillStyle = "white";
+        context.font = "24px sans-serif";
+        context.textAlign = "right";
+        context.fillText(`Score: ${score}`, canvasWidth - 20, 50);
+        context.textAlign = "left";
+        context.fillText(`Time: ${time}`, 20, 50);
+      }
+
+      // リザルト画面の描画
+      function drawResult() {
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvasWidth, canvasHeight);
+        context.fillStyle = "white";
+        context.font = "48px sans-serif";
+        context.textAlign = "center";
+        context.fillText(`Game Over`, canvasWidth / 2, canvasHeight / 2 - 50);
+        context.fillText(`Score: ${score}`, canvasWidth / 2, canvasHeight / 2 + 50);
+      }
+
+      // タッチ操作の取得
+      let touchX = 0;
+      let touchY = 0;
+      canvas.addEventListener("touchstart", (event) => {
+        touchX = event.touches[0].clientX;
+        touchY = event.touches[0].clientY;
+      });
+      canvas.addEventListener("touchmove", (event) => {
+        const diffX = event.touches[0].clientX - touchX;
+        const diffY = event.touches[0].clientY - touchY;
+        playerX += diffX;
+        playerY += diffY;
+        touchX = event.touches[0].clientX;
+        touchY = event.touches[0].clientY;
+      });
+
+      // 敵の移動
+      function moveEnemy() {
+        enemyY += 5;
+        if (enemyY > canvasHeight) {
+          enemyX = Math.random() * canvasWidth;
+          enemyY = 50;
+        }
+      }
+
+      // 敵の弾の移動
+      function moveEnemyBullet() {
+        const dx = playerX - enemyBulletX;
+        const dy = playerY - enemyBulletY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        enemyBulletX += dx / dist * 10;
+        enemyBulletY += dy / dist * 10;
+      }
+
+      // 弾の移動
+      function moveBullet() {
+        bulletY -= 10;
+        if (bulletY < 0) {
+          bulletX = playerX + 20;
+          bulletY = playerY - 20;
+        }
+      }
+
+      // 衝突判定
+      function checkCollision() {
+        // 敵と弾の衝突判定
+        if (bulletX > enemyX && bulletX < enemyX + 50 && bulletY < enemyY + 50) {
+          enemyX = Math.random() * canvasWidth;
+          enemyY = 50;
+          score += 10;
+        }
+        // プレイヤーと敵機の衝突判定
+        const dx = playerX - enemyBulletX;
+        const dy = playerY - enemyBulletY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 30) {
+          gameOver = true;
+        }
+      }
+
+      // ゲームループ
+      function gameLoop() {
+        if (!gameStart) {
+          drawTitle();
+          requestAnimationFrame(gameLoop);
+          return;
+        }
+
+        if (gameOver) {
+          drawResult();
+          requestAnimationFrame(gameLoop);
+          return;
+        }
+
+        context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // 背景の描画
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // 敵の描画
+        context.drawImage(enemyImage, enemyX, enemyY, 50, 50);
+
+        // 弾の描画
+        context.fillStyle = "white";
+        context.fillRect(bulletX, bulletY, 10, 20);
+
+        // プレイヤーの描画
+        context.drawImage(playerImage, playerX, playerY, 50, 50);
+
+        // 敵の弾の描画
+        context.fillStyle = "red";
+        context.beginPath();
+        context.arc(enemyBulletX, enemyBulletY, 10, 0, 2 * Math.PI);
+        context.fill();
+
+        // 移動
+        moveEnemy();
+        moveBullet();
+        moveEnemyBullet();
+        checkCollision();
+
+        // スコアと制限時間の描画
+        drawScore();
+
+        // 時間切れ
+        time -= 1/60;
+        if (time <= 0) {
+          gameOver = true;
+        }
+
+        // 次のフレームの描画
+        requestAnimationFrame(gameLoop);
+      }
+
+      // ゲームの開始
+      drawTitle();
+      setTimeout(() => {
+        gameInit();
+        gameLoop();
+      }, 3000); // 3秒間タイトル画面を表示してからゲームを開始する
+    </script>
+  </body>
+</html>
